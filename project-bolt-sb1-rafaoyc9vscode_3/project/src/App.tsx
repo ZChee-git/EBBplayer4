@@ -37,6 +37,7 @@ function App() {
   const [currentPreview, setCurrentPreview] = useState(generateTodayPlaylist());
   const [currentPlaylist, setCurrentPlaylist] = useState<any>(null);
   const [previewType, setPreviewType] = useState<'new' | 'review'>('new');
+  // 已移除 singlePlayVideo 状态，回退到原始状态
 
   const handleVideoAdd = async (files: File[], collectionId: string) => {
     try {
@@ -83,6 +84,22 @@ function App() {
     );
 
     if (lastNewPlaylist) {
+      // 检查未完成新学习所需视频是否都存在
+      const missing = lastNewPlaylist.items.some(item => !videos.find(v => v.id === item.videoId));
+      if (missing) {
+        // 清除本地未完成新学习记录
+        try {
+          const playlistsRaw = window.localStorage.getItem('playlists');
+          if (playlistsRaw) {
+            const playlistsArr = JSON.parse(playlistsRaw);
+            const filtered = playlistsArr.filter((p) => p.isCompleted || p.playlistType !== 'new');
+            window.localStorage.setItem('playlists', JSON.stringify(filtered));
+          }
+        } catch (e) { /* ignore */ }
+        alert('有未完成的新学习视频已被删除，相关学习记录已自动清除。');
+        window.location.reload();
+        return;
+      }
       // 继续上次的新学习
       setCurrentPlaylist(lastNewPlaylist);
       setShowPlayer(true);
@@ -297,6 +314,7 @@ function App() {
           playlists={playlists}
           videos={videos}
           onClose={() => setShowHistory(false)}
+          // 已移除 onSinglePlay，回退到原始调用
         />
       )}
 
@@ -311,6 +329,7 @@ function App() {
           isAudioMode={currentPlaylist.playlistType === 'review'}
         />
       )}
+      {/* 已移除单独播放逻辑，回退到原始状态 */}
 
       {/* Install Prompt */}
       <InstallPrompt />
